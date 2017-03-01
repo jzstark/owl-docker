@@ -1,0 +1,31 @@
+From ioft/armhf-ubuntu:16.04
+Maintainer Roger Stark <rho.ajax@gmail.com>
+
+ENV NAME ocaml-4.04.0
+WORKDIR /root
+
+RUN apt-get -yqq update \
+    && DEBIAN_FRONTEND=noninteractive apt-get -yqq --no-install-recommends install \
+    wget pkg-config git build-essential m4 software-properties-common aspcud unzip rsync curl dialog nano libx11-dev \
+    && apt-get -y update
+
+RUN wget -t 3 -T 30 -nv http://caml.inria.fr/pub/distrib/ocaml-4.04/${NAME}.tar.gz \
+    && tar xzf ${NAME}.tar.gz \
+    && rm -f ${NAME}.tar.gz \
+    && cd ${NAME} \
+    && ./configure -prefix /usr \
+    && cd config \
+    && sed -i -e 's/#define ARCH_ALIGN_DOUBLE/#undef ARCH_ALIGN_DOUBLE/g' m.h m-templ.h
+    && cd .. \
+    && make world.opt \
+    && umask 022 \
+    && make install \
+    && make clean
+
+RUN apt-get -yqq update \
+    && DEBIAN_FRONTEND=noninteractive apt-get -yqq --no-install-recommends install opam 
+    && sh -c '/bin/echo -e "y\n" | opam init' \
+    && eval `opam config env`
+
+# sh -c '/bin/echo -e "y\n" | opam init' \
+# wget -t 3 -T 30 -nv https://raw.github.com/ocaml/opam/master/shell/opam_installer.sh -O - | sh -s /usr/bin
