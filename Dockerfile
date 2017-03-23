@@ -7,8 +7,14 @@ RUN apt-get -yqq update \
     && DEBIAN_FRONTEND=noninteractive apt-get -yqq --no-install-recommends install \
     libgsl0-dev libblas-dev liblapack-dev  pkg-config libplplot-dev libshp-dev
  
-RUN opam install -y utop ctypes plplot dolog alcotest gsl lacaml oasis eigen \
+RUN opam install -y utop ctypes plplot dolog alcotest gsl lacaml oasis\
     && eval `opam config env`
+
+RUN cd /root && git clone https://github.com/ryanrhymes/eigen.git \
+	&& eval `opam config env` \
+	&& cd /root/eigen \
+    && make oasis \
+    && make && make install
  
 RUN git clone https://github.com/ryanrhymes/owl.git \
     && cd owl \
