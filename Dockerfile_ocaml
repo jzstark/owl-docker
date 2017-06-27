@@ -15,7 +15,7 @@ RUN wget -t 3 -T 30 -nv http://caml.inria.fr/pub/distrib/ocaml-4.04/${NAME}.tar.
     && cd ${NAME} \
     && ./configure -prefix /usr \
     && cd config \
-    && sed -i -e 's/#define ARCH_ALIGN_DOUBLE/#undef ARCH_ALIGN_DOUBLE/g' m.h m-templ.h
+    && sed -i -e 's/#define ARCH_ALIGN_DOUBLE/#undef ARCH_ALIGN_DOUBLE/g' m.h m-templ.h \
     && cd .. \
     && make world.opt \
     && umask 022 \
