@@ -10,12 +10,13 @@ RUN apt-get -yqq update \
 RUN opam install -y utop ctypes plplot dolog alcotest gsl lacaml oasis\
     && eval `opam config env`
 
+RUN echo "test2"
 RUN cd /root && git clone https://github.com/ryanrhymes/eigen.git \
 	&& eval `opam config env` \
 	&& cd /root/eigen \
     && make oasis \
     && make && make install
- 
+
 RUN git clone https://github.com/ryanrhymes/owl.git \
     && cd owl \
     && eval `opam config env ` \
