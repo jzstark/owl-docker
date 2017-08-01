@@ -5,7 +5,7 @@ WORKDIR /root
 
 RUN apt-get -yqq update \
     && DEBIAN_FRONTEND=noninteractive apt-get -yqq --no-install-recommends install \
-    libgsl0-dev libblas-dev liblapack-dev  pkg-config libplplot-dev libshp-dev
+    libgsl0-dev libblas-dev liblapack-dev  liblapacke-dev pkg-config libplplot-dev libshp-dev libopenblas-dev
  
 RUN opam install -y utop ctypes plplot dolog alcotest gsl lacaml oasis\
     && eval `opam config env`
@@ -22,7 +22,7 @@ RUN git clone https://github.com/ryanrhymes/owl.git \
     && eval `opam config env ` \
     && make oasis \
     && make && make install \
-    && bash -c 'echo -e "#require \"owl\"\n#require \"owl_topic\"" >> /root/.ocamlinit'
+    && bash -c 'echo -e "#require \"owl\"\n" >> /root/.ocamlinit'
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -yqq --no-install-recommends install vim
 
