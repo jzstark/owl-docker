@@ -7,7 +7,7 @@ RUN apt-get -yqq update \
     && DEBIAN_FRONTEND=noninteractive apt-get -yqq --no-install-recommends install \
     libgsl0-dev libblas-dev liblapack-dev  liblapacke-dev pkg-config libplplot-dev libshp-dev libopenblas-dev
  
-RUN opam install -y utop ctypes plplot dolog alcotest gsl lacaml oasis\
+RUN opam install -y utop ctypes plplot dolog alcotest gsl lacaml oasis atdgen\
     && eval `opam config env`
 
 RUN cd /root && git clone https://github.com/ryanrhymes/eigen.git \
