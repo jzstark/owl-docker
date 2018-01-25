@@ -1,5 +1,5 @@
 FROM ioft/armhf-ubuntu:16.04
-Maintainer Roger Stark <rho.ajax@gmail.com>
+MAINTAINER Roger Stark <rho.ajax@gmail.com>
 
 #### Prerequisites ####
 
@@ -10,15 +10,14 @@ RUN apt-get -y install libopenblas-dev liblapacke-dev
 
 RUN apt-get -y install opam \
     && yes | opam init && eval $(opam config env) 
-    
 RUN opam update && opam switch 4.06.0 && eval $(opam config env)
+
 RUN opam install -y oasis jbuilder ocaml-compiler-libs ctypes plplot alcotest utop 
 
 #### Set up env vars ####
 
 ENV PATH /root/.opam/4.06.0/bin:/usr/local/sbin/:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
 ENV CAML_LD_LIBRARY_PATH /root/.opam/4.06.0/lib/stublibs
-
 
 #### Install Eigen library ####
 
