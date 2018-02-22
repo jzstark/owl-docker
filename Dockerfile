@@ -1,54 +1,50 @@
-FROM ioft/armhf-ubuntu:16.04
-MAINTAINER Roger Stark <rho.ajax@gmail.com>
+FROM ocaml/opam:alpine_ocaml-4.06.0
+MAINTAINER Roger Stark
 
-#### Prerequisites ####
+USER opam
 
-RUN apt-get update
-RUN apt-get -y install git build-essential ocaml wget unzip aspcud m4 pkg-config
-RUN apt-get -y install camlp4-extra libshp-dev libplplot-dev
-RUN apt-get -y install libopenblas-dev liblapacke-dev
+RUN sudo apk update && \
+    sudo apk add m4 wget unzip aspcud openblas-dev
 
-RUN apt-get -y install opam \
-    && yes | opam init && eval $(opam config env) 
-RUN opam update && opam switch 4.06.0 && eval $(opam config env)
+RUN opam install -y oasis jbuilder ocaml-compiler-libs ctypes alcotest utop 
 
-RUN opam install -y oasis jbuilder ocaml-compiler-libs ctypes plplot alcotest utop 
+#################### SET UP ENV VARS #######################
 
-#### Set up env vars ####
+ENV PATH /home/opam/.opam/4.06.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
+ENV CAML_LD_LIBRARY_PATH /home/opam/.opam/4.06.0/lib/stublibs
+ENV LD_LIBRARY_PATH /usr/lib/:/usr/local/lib:/home/opam/.opam/4.06.0/lib/:/home/opam/.opam/4.06.0/lib/stublibs/:/home/opam/.opam/4.06.0/lib/stubslibs/
 
-ENV PATH /root/.opam/4.06.0/bin:/usr/local/sbin/:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
-ENV CAML_LD_LIBRARY_PATH /root/.opam/4.06.0/lib/stublibs
+RUN echo "#require \"owl_top\";; open Owl;;" >> /home/opam/.ocamlinit \
+    && bash -c 'echo -e "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> /home/opam/.profile' \
+    && opam config env >> /home/opam/.profile \
+    && bash -c "source /home/opam/.profile"
 
-#### Install Eigen library ####
+#################### INSTALL EIGEN   #######################
 
-ENV EIGENPATH /root/eigen
-RUN cd /root && git clone https://github.com/ryanrhymes/eigen.git
-RUN sed -i -- 's/-march=native -mfpmath=sse/-march=native/g' $EIGENPATH/_oasis $EIGENPATH/lib/Makefile \
-    && sed -i -- 's/ar rvs/gcc-ar rvs/g' /root/eigen/lib/Makefile
-RUN eval $(opam config env) \
-    && make -C $EIGENPATH oasis \
-    && make -C $EIGENPATH && make -C $EIGENPATH install
+ENV EIGENPATH /home/opam/eigen
+RUN cd /home/opam/ && git clone https://github.com/ryanrhymes/eigen.git
 
-#### Install Owl library ####
+RUN sed -i -- 's/-Wno-extern-c-compat -Wno-c++11-long-long -Wno-invalid-partial-specialization/-Wno-ignored-attributes/g' $EIGENPATH/lib/Makefile \
+    && sed -i -- 's/typedef int64_t INDEX;/#include <stdint.h>\ntypedef int64_t INDEX;/g' $EIGENPATH/lib/eigen_dsmat.h $EIGENPATH/lib/eigen_spmat.h \
+    && sed -i -- 's/-flto/ /g' $EIGENPATH/lib/Makefile \
+    && sed -i -- 's/-flto/ /g' $EIGENPATH/_oasis 
 
-ENV OWLPATH /root/owl
-RUN cd /root && git clone https://github.com/ryanrhymes/owl.git
+RUN cd $EIGENPATH \
+    && sudo make oasis && sudo make && sudo make install 
 
-# remove unrecognised sse compiler option on arm; add libraries for linking
-RUN sed -i -- 's/-lopenblas/-lopenblas -llapacke/g' $OWLPATH/src/owl/jbuild \
-    && sed -i -- 's/-march=native -mfpmath=sse/-march=native/g' $OWLPATH/src/owl/jbuild \
-    && sed -i -- 's/-DSFMT_MEXP=19937 -msse2/-DSFMT_MEXP=19937/g' $OWLPATH/src/owl/jbuild 
+####################   INSTALL OWL  #######################
+
+ENV OWLPATH /home/opam/owl
+RUN cd /home/opam && git clone https://github.com/ryanrhymes/owl.git
+
+RUN rm -f $OWLPATH/src/owl/misc/owl_plot.* \
+    && sed -i '/plplot/d' $OWLPATH/src/owl/jbuild \
+    && sed -i '/module Plot = Owl_plot/d' $OWLPATH/src/owl/owl.ml \
+    && sed -i '/output h$/,+2d; /h filename ;$/a *)' $OWLPATH/test/unit_stats_rvs.ml \
+    && sed -i '/let plot_comparison/i (*' $OWLPATH/test/unit_stats_rvs.ml
 
 RUN cd $OWLPATH \
-    && eval `opam config env ` \
     && make && make install
 
-#### Setup default container vars #### 
-
-RUN echo "#require \"owl_top\";; open Owl;;" >> /root/.ocamlinit \
-    && bash -c 'echo -e "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/root/.opam/4.06.0/lib/stubslibs" >> /root/.bashrc' \
-    && opam config env >> /root/.bashrc \
-    && bash -c "source /root/.bashrc"
-
 WORKDIR $OWLPATH
-ENTRYPOINT /bin/bash
+ENTRYPOINT /bin/sh
